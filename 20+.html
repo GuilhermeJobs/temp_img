@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Os 20 Mais PRIME</title>
+    
+    <link rel="icon" type="image/jpeg" href="https://estrategiahp.my.canva.site/site-prime/_assets/media/30524e1eb57f8122fe121282689fd530.png">
+
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js">
+    </script>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #14141f;
+            --surface2: #1e1e2e;
+            --accent: #002577;
+            --accent-glow: #4f6ef766;
+            --text: #e0e0eb;
+            --text-muted: #8888a0;
+            --success: #34d399;
+            --warning: #fbbf24;
+            --danger: #f87171;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            --font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* === FULLSCREEN IMAGE BACKGROUND === */
+        .image-stage {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+        }
+
+        .image-stage img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: opacity, transform;
+        }
+
+        .image-stage img.entering {
+            animation: imagePopIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes imagePopIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.94);
+                filter: blur(8px);
+            }
+            60% {
+                opacity: 1;
+                transform: scale(1.01);
+                filter: blur(0px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+                filter: blur(0px);
+            }
+        }
+
+        /* === STATUS OVERLAY === */
+        .status-overlay {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 50px;
+            padding: 10px 22px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 12px var(--success);
+            animation: statusPulse 2.2s ease-in-out infinite;
+        }
+
+        .status-dot.idle {
+            background: var(--text-muted);
+            box-shadow: 0 0 8px var(--text-muted);
+            animation: statusPulseIdle 3s ease-in-out infinite;
+        }
+
+        .status-dot.reading {
+            background: var(--warning);
+            box-shadow: 0 0 14px var(--warning);
+            animation: statusPulseReading 0.6s ease-in-out infinite;
+        }
+
+        .status-dot.found {
+            background: var(--success);
+            box-shadow: 0 0 16px var(--success);
+            animation: statusPulse 1s ease-in-out 3;
+        }
+
+        .status-dot.not-found {
+            background: var(--danger);
+            box-shadow: 0 0 16px var(--danger);
+            animation: statusPulse 1s ease-in-out 3;
+        }
+
+        @keyframes statusPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 10px var(--success);
+            }
+            50% {
+                box-shadow: 0 0 24px var(--success), 0 0 40px var(--success);
+            }
+        }
+
+        @keyframes statusPulseIdle {
+            0%,
+            100% {
+                box-shadow: 0 0 6px var(--text-muted);
+            }
+            50% {
+                box-shadow: 0 0 14px var(--text-muted);
+            }
+        }
+
+        @keyframes statusPulseReading {
+            0%,
+            100% {
+                box-shadow: 0 0 10px var(--warning);
+            }
+            50% {
+                box-shadow: 0 0 28px var(--warning), 0 0 44px var(--warning);
+            }
+        }
+
+        .status-text {
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            color: var(--text-muted);
+            transition: color 0.3s;
+        }
+
+        .status-code {
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.75rem;
+            color: var(--accent);
+            background: rgba(79, 110, 247, 0.12);
+            padding: 3px 10px;
+            border-radius: 20px;
+            transition: all 0.3s;
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* === FLOATING CONFIG BUTTON === */
+        .config-trigger {
+            position: fixed !important;
+            bottom: 28px !important;
+            right: 28px !important;
+            left: auto !important;
+            top: auto !important;
+            z-index: 100;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 24px var(--accent-glow);
+            transition: all var(--transition);
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        .config-trigger:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 36px rgba(0, 37, 119, 0.55);
+            background: #1d47a1;
+        }
+
+        .config-trigger:active {
+            transform: scale(0.94);
+            transition: 0.1s;
+        }
+
+        .config-trigger svg {
+            width: 22px;
+            height: 22px;
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .config-trigger.open svg {
+            transform: rotate(90deg);
+        }
+
+        /* === SETTINGS PANEL === */
+        .settings-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s;
+        }
+
+        .settings-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 420px;
+            max-width: 92vw;
+            height: 100vh;
+            background: var(--surface);
+            border-left: 1px solid rgba(255, 255, 255, 0.06);
+            z-index: 201;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.5);
+            scroll-behavior: smooth;
+        }
+
+        .settings-panel.active {
+            transform: translateX(0);
+        }
+
+        .settings-panel::-webkit-scrollbar {
+            width: 5px;
+        }
+        .settings-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .settings-panel::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .panel-header {
+            padding: 24px 28px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .panel-header h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+
+        .panel-close {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+        }
+
+        .panel-close:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+
+        .panel-body {
+            padding: 20px 28px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .panel-section {
+            background: var(--surface2);
+            border-radius: var(--radius-sm);
+            padding: 18px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .panel-section h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text);
+            letter-spacing: -0.2px;
+        }
+
+        .panel-section p {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            line-height: 1.55;
+        }
+
+        /* === DETAILS (MANUAL TESTER) === */
+        details.panel-details {
+            background: var(--surface2);
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            overflow: hidden;
+        }
+
+        details.panel-details summary {
+            padding: 16px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            user-select: none;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.2s;
+        }
+
+        details.panel-details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details.panel-details summary:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        details.panel-details summary::after {
+            content: '▸';
+            font-size: 0.7rem;
+            transition: transform 0.3s;
+            color: var(--text-muted);
+        }
+
+        details.panel-details[open] summary::after {
+            transform: rotate(90deg);
+        }
+
+        .details-content {
+            padding: 0 20px 18px;
+        }
+
+        .test-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .test-input-group input {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text);
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .test-input-group input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.15);
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 0.2px;
+            transition: all 0.25s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 14px var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            background: #5f7cf8;
+            box-shadow: 0 6px 20px rgba(79, 110, 247, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.96);
+            transition: 0.1s;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .test-result {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            min-height: 20px;
+            word-break: break-all;
+            transition: all 0.3s;
+        }
+
+        .test-result.success {
+            color: var(--success);
+            border-color: rgba(52, 211, 153, 0.3);
+        }
+
+        .test-result.error {
+            color: var(--danger);
+            border-color: rgba(248, 113, 113, 0.3);
+        }
+
+        /* === SHIMMER CARD (LAST READ) === */
+        .shimmer-card {
+            background: var(--surface2);
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shimmer-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(105deg,
+                    transparent 40%,
+                    rgba(255, 255, 255, 0.03) 45%,
+                    rgba(255, 255, 255, 0.06) 50%,
+                    rgba(255, 255, 255, 0.03) 55%,
+                    transparent 60%);
+            animation: shimmer 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .shimmer-card .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .shimmer-card .value {
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+            color: var(--warning);
+            font-weight: 600;
+        }
+
+        .shimmer-card .value.hex {
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+        }
+
+        /* === HISTORY LIST === */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 260px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .history-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .history-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            font-size: 0.78rem;
+            transition: all 0.3s;
+            animation: historySlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes historySlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .history-item .badge {
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.7rem;
+            background: rgba(79, 110, 247, 0.15);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+
+        .history-item .badge.found-badge {
+            background: rgba(52, 211, 153, 0.15);
+            color: var(--success);
+        }
+
+        .history-item .badge.missing-badge {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--danger);
+        }
+
+        .history-item .time {
+            margin-left: auto;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        /* === TOAST === */
+        .toast-container {
+            position: fixed;
+            top: 90px;
+            right: 28px;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            animation: toastIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            pointer-events: auto;
+            max-width: 360px;
+        }
+
+        .toast.removing {
+            animation: toastOut 0.3s ease-in forwards;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(60px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        @keyframes toastOut {
+            to {
+                opacity: 0;
+                transform: translateX(60px) scale(0.9);
+            }
+        }
+
+        .toast.success {
+            border-left: 3px solid var(--success);
+        }
+        .toast.error {
+            border-left: 3px solid var(--danger);
+        }
+        .toast.info {
+            border-left: 3px solid var(--accent);
+        }
+
+        /* === TOOLTIP === */
+        [data-tooltip] {
+            position: relative;
+        }
+
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%) scale(0.8);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 0.7rem;
+            padding: 6px 12px;
+            border-radius: 6px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            font-weight: 400;
+            letter-spacing: 0.2px;
+        }
+
+        [data-tooltip]:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+
+        /* === DB STATS === */
+        .db-stats {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .stat-pill {
+            background: rgba(79, 110, 247, 0.1);
+            border: 1px solid rgba(79, 110, 247, 0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--accent);
+            letter-spacing: 0.3px;
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 600px) {
+            .status-overlay {
+                top: 12px;
+                padding: 8px 16px;
+                gap: 6px;
+                border-radius: 40px;
+            }
+            .status-text {
+                font-size: 0.7rem;
+            }
+            .status-code {
+                font-size: 0.65rem;
+                padding: 2px 8px;
+                max-width: 100px;
+            }
+            .config-trigger {
+                bottom: 18px;
+                right: 18px;
+                width: 42px;
+                height: 42px;
+            }
+            .settings-panel {
+                width: 100%;
+                max-width: 100vw;
+            }
+            .toast-container {
+                right: 12px;
+                top: 70px;
+                left: 12px;
+            }
+            .toast {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .status-overlay {
+                transform: translateX(-50%) scale(0.85);
+                top: 6px;
+                padding: 6px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========== IMAGE STAGE ========== -->
+    <div class="image-stage" id="imageStage">
+        <img
+            id="mainImage"
+            src="https://raw.githubusercontent.com/GuilhermeJobs/temp_img/refs/heads/main/Img/main.png"
+            alt="Principal"
+            loading="eager"
+            decoding="async"
+        />
+    </div>
+
+    <!-- ========== STATUS OVERLAY (DESATIVADO) ========== -->
+    <!--
+    <div class="status-overlay" id="statusOverlay">
+        <span class="status-dot idle" id="statusDot" data-tooltip="Aguardando leitura"></span>
+        <span class="status-text" id="statusText">Aguardando cartão...</span>
+        <span class="status-code" id="statusCode" style="display:none;"></span>
+    </div>
+    -->
+
+    <!-- ========== SETTINGS BACKDROP ========== -->
+    <div class="settings-backdrop" id="settingsBackdrop"></div>
+
+    <!-- ========== SETTINGS PANEL ========== -->
+    <aside class="settings-panel" id="settingsPanel" aria-label="Painel de configuração">
+        <div class="panel-header">
+            <h2>⚙️ Configurações</h2>
+            <button class="panel-close" id="panelClose" aria-label="Fechar painel" data-tooltip="Fechar">✕</button>
+        </div>
+
+        <div class="panel-body">
+            <!-- LAST READ CARD -->
+            <div class="shimmer-card">
+                <div class="label">Último cartão lido</div>
+                <div class="value hex" id="lastHex">—</div>
+                <div class="label" style="margin-top:8px;">Decimal original</div>
+                <div class="value" id="lastDecimal">—</div>
+            </div>
+
+            <!-- DB STATS -->
+            <div class="panel-section">
+                <h3>📊 Base de dados</h3>
+                <div class="db-stats" id="dbStats">
+                    <span class="stat-pill">Carregando...</span>
+                </div>
+            </div>
+
+            <!-- MANUAL TESTER -->
+            <details class="panel-details" id="manualTester">
+                <summary>🧪 Testador Manual</summary>
+                <div class="details-content">
+                    <p style="margin-bottom:12px;font-size:0.75rem;">Digite um código decimal para simular a leitura de um cartão.</p>
+                    <div class="test-input-group">
+                        <input
+                            type="text"
+                            id="testInput"
+                            placeholder="Ex: 0975252089"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            aria-label="Código decimal para teste"
+                        />
+                        <button class="btn btn-primary" id="testBtn">Testar</button>
+                    </div>
+                    <div class="test-result" id="testResult">Resultado aparecerá aqui...</div>
+                </div>
+            </details>
+
+            <!-- HISTORY -->
+            <div class="panel-section">
+                <h3>📋 Histórico de leituras</h3>
+                <div class="history-list" id="historyList">
+                    <p style="font-size:0.75rem;color:var(--text-muted);">Nenhuma leitura ainda.</p>
+                </div>
+            </div>
+
+            <!-- INFO -->
+            <div class="panel-section">
+                <h3>ℹ️ Como usar</h3>
+                <p>Aproxime o cartão magnético ao leitor HID. O sistema detecta automaticamente a digitação rápida e converte o código para hexadecimal.</p>
+                <p style="margin-top:8px;">Threshold de leitura: <strong>80 ms</strong> entre teclas.</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ========== FLOATING CONFIG BUTTON ========== -->
+    <button
+        class="config-trigger"
+        id="configTrigger"
+        aria-label="Abrir configurações"
+        data-tooltip="Configurações"
+    >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+    </button>
+
+    <!-- ========== TOAST CONTAINER ========== -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        (function() {
+            // ==================== DOM REFS (com fallback seguro) ====================
+            const $ = (id) => document.getElementById(id);
+
+            const mainImage = $('mainImage');
+            const statusDot = $('statusDot');
+            const statusText = $('statusText');
+            const statusCode = $('statusCode');
+            const configTrigger = $('configTrigger');
+            const settingsBackdrop = $('settingsBackdrop');
+            const settingsPanel = $('settingsPanel');
+            const panelClose = $('panelClose');
+            const lastHex = $('lastHex');
+            const lastDecimal = $('lastDecimal');
+            const dbStats = $('dbStats');
+            const testInput = $('testInput');
+            const testBtn = $('testBtn');
+            const testResult = $('testResult');
+            const historyList = $('historyList');
+            const toastContainer = $('toastContainer');
+
+            // ==================== CONSTANTS ====================
+            const DB_URL = 'https://raw.githubusercontent.com/GuilhermeJobs/temp_img/refs/heads/main/bs.xlsx';
+            const MAIN_IMAGE_URL = 'https://raw.githubusercontent.com/GuilhermeJobs/temp_img/refs/heads/main/Img/main.png';
+            const IMG_BASE = 'https://raw.githubusercontent.com/GuilhermeJobs/temp_img/refs/heads/main/Img/';
+
+            // ==================== STATE ====================
+            let imageDB = {};       // hex -> image URL
+            let dbLoaded = false;
+            let dbEntryCount = 0;
+            let isFirstCard = true;
+            let currentImage = MAIN_IMAGE_URL;
+
+            // Card reading state
+            let cardBuffer = '';
+            let lastKeyTime = 0;
+            let readTimeout = null;
+            const KEY_THRESHOLD_MS = 80;
+            const PAUSE_THRESHOLD_MS = 250;
+
+            // ==================== SAFE DOM HELPERS ====================
+            function safeSet(el, prop, value) {
+                if (el) el[prop] = value;
+            }
+
+            function safeSetHTML(el, html) {
+                if (el) el.innerHTML = html;
+            }
+
+            function safeAddClass(el, cls) {
+                if (el) el.className = cls;
+            }
+
+            function safeSetDisplay(el, display) {
+                if (el) el.style.display = display;
+            }
+
+            function safeSetAttr(el, attr, value) {
+                if (el) el.setAttribute(attr, value);
+            }
+
+            // ==================== LOAD DATABASE ====================
+            async function loadDatabase() {
+                try {
+                    if (dbStats) dbStats.innerHTML = '<span class="stat-pill">Carregando...</span>';
+
+                    const response = await fetch(DB_URL);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                    const arrayBuffer = await response.arrayBuffer();
+                    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+                    imageDB = {};
+                    let count = 0;
+
+                    for (let i = 0; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (!row || row.length < 2) continue;
+
+                        const idRaw = String(row[0]).trim();
+                        const filenameRaw = String(row[1]).trim();
+
+                        if (!idRaw || !filenameRaw) continue;
+
+                        // Pular cabeçalho
+                        if (i === 0 && /^(id|cod|decimal|hex)/i.test(idRaw)) continue;
+
+                        // ⚡ O ID na planilha JÁ está em HEX — usar diretamente
+                        const hex = idRaw.replace(/[^0-9A-Fa-f]/g, '').toUpperCase().padStart(8, '0');
+                        if (!hex || hex.length < 2) continue;
+
+                        const imageUrl = filenameRaw.startsWith('http')
+                            ? filenameRaw
+                            : IMG_BASE + filenameRaw;
+
+                        imageDB[hex] = imageUrl;
+                        count++;
+                    }
+
+                    dbEntryCount = count;
+                    dbLoaded = true;
+
+                    if (dbStats) dbStats.innerHTML = `<span class="stat-pill">${count} registros carregados</span>`;
+
+                    console.log(`[DB] ✅ ${count} registros carregados.`);
+                    console.log('[DB] Amostra:', Object.keys(imageDB).slice(0, 5));
+                    console.log('[DB] Busca "3A212A79":', imageDB['3A212A79'] || '❌ NÃO ENCONTRADO');
+                    console.log('[DB] Busca "3A21B049":', imageDB['3A21B049'] || '❌ NÃO ENCONTRADO');
+                } catch (err) {
+                    console.error('[DB] ❌ Erro ao carregar base:', err);
+                    if (dbStats) dbStats.innerHTML = '<span class="stat-pill">Erro ao carregar</span>';
+                    dbLoaded = false;
+                    showToast('Erro ao carregar a base de dados. Verifique a conexão.', 'error');
+                }
+            }
+
+            // ==================== DECAHEX (Excel-compatible) ====================
+            function decahex(decimal, places = 8) {
+                try {
+                    const num = BigInt(decimal);
+                    return num.toString(16).padStart(places, '0').toUpperCase();
+                } catch (e) {
+                    console.error('[DECAHEX] Erro na conversão:', decimal, e);
+                    return null;
+                }
+            }
+
+            // ==================== LOOKUP ====================
+            function lookupImage(hex) {
+                if (!dbLoaded) {
+                    console.warn('[LOOKUP] Banco ainda não carregado.');
+                    return null;
+                }
+                return imageDB[hex] || null;
+            }
+
+            // ==================== SET IMAGE ====================
+            function setImage(url, hex) {
+                if (!mainImage) return;
+                if (url === currentImage && mainImage.src === url) return;
+
+                const img = new Image();
+                img.onload = () => {
+                    currentImage = url;
+                    mainImage.src = url;
+                    mainImage.classList.remove('entering');
+                    void mainImage.offsetWidth;
+                    mainImage.classList.add('entering');
+                };
+                img.onerror = () => {
+                    showToast('Erro ao carregar a imagem correspondente.', 'error');
+                    updateStatus('not-found', 'Informações não encontradas', hex);
+                };
+                img.src = url;
+            }
+
+            // ==================== STATUS INDICATOR ====================
+            function updateStatus(state, text, hex) {
+                if (statusDot) {
+                    statusDot.className = 'status-dot ' + state;
+                    statusDot.setAttribute('data-tooltip', text);
+                }
+                if (statusText) statusText.textContent = text;
+                if (statusCode) {
+                    if (hex) {
+                        statusCode.textContent = hex;
+                        statusCode.style.display = 'inline-block';
+                    } else {
+                        statusCode.style.display = 'none';
+                    }
+                }
+            }
+
+            // ==================== PROCESS CARD ====================
+            function processCard(decimalStr) {
+                const hex = decahex(decimalStr);
+                if (!hex) {
+                    showToast('Código inválido. Não foi possível converter.', 'error');
+                    updateStatus('not-found', 'Código inválido', null);
+                    return;
+                }
+
+                console.log(`[CARD] Decimal: ${decimalStr} → Hex: ${hex}`);
+
+                // Update panel
+                if (lastHex) lastHex.textContent = hex;
+                if (lastDecimal) lastDecimal.textContent = decimalStr;
+
+                const imageUrl = lookupImage(hex);
+                console.log(`[CARD] Busca "${hex}":`, imageUrl || '❌ NÃO ENCONTRADO');
+
+                // Add to history (antes de decidir found/missing)
+                addHistory(hex, decimalStr, imageUrl ? 'found' : 'missing');
+
+                if (imageUrl) {
+                    setImage(imageUrl, hex);
+                    updateStatus('found', 'Encontrada!', hex);
+                    showToast(`Cartão ${hex} → Carregado ✅`, 'success');
+                } else {
+                    if (isFirstCard) {
+                        updateStatus('not-found', 'Sem informação — mantendo padrão', hex);
+                    }
+                    showToast(`Cartão ${hex} → Nenhuma informação correspondente ❌`, 'info');
+                }
+
+                isFirstCard = false;
+            }
+
+            // ==================== HISTORY ====================
+            function addHistory(hex, decimal, statusOverride) {
+                if (!historyList) return;
+
+                const emptyMsg = historyList.querySelector('p');
+                if (emptyMsg) emptyMsg.remove();
+
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                const status = statusOverride || (lookupImage(hex) ? 'found' : 'missing');
+                const badgeClass = status === 'found' ? 'found-badge' : 'missing-badge';
+                const badgeText = status === 'found' ? '✓ OK' : '✗ N/D';
+
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <span class="badge ${badgeClass}">${hex}</span>
+                    <span style="font-size:0.7rem;color:var(--text-muted);">${decimal}</span>
+                    <span class="badge ${badgeClass}" style="font-size:0.6rem;padding:2px 8px;">${badgeText}</span>
+                    <span class="time">${timeStr}</span>
+                `;
+
+                historyList.insertBefore(item, historyList.firstChild);
+
+                while (historyList.children.length > 50) {
+                    historyList.lastChild.remove();
+                }
+            }
+
+            // ==================== TOAST ====================
+            function showToast(message, type) {
+                if (!toastContainer) return;
+
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                toastContainer.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.classList.add('removing');
+                    toast.addEventListener('animationend', () => toast.remove());
+                }, 1500);
+            }
+
+            // ==================== CARD READING (HID Emulation) ====================
+            function handleKeyDown(e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+                    return;
+                }
+
+                const now = performance.now();
+                const timeSinceLastKey = now - lastKeyTime;
+
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (cardBuffer.length > 0) {
+                        finalizeBuffer();
+                    }
+                    lastKeyTime = now;
+                    return;
+                }
+
+                if (/^\d$/.test(e.key)) {
+                    e.preventDefault();
+                    cardBuffer += e.key;
+                    lastKeyTime = now;
+
+                    updateStatus('reading', 'Lendo cartão...', null);
+
+                    if (readTimeout) clearTimeout(readTimeout);
+                    readTimeout = setTimeout(() => {
+                        if (cardBuffer.length > 0) {
+                            finalizeBuffer();
+                        }
+                    }, PAUSE_THRESHOLD_MS);
+                }
+            }
+
+            function finalizeBuffer() {
+                if (readTimeout) clearTimeout(readTimeout);
+                readTimeout = null;
+
+                const decimal = cardBuffer;
+                cardBuffer = '';
+                lastKeyTime = 0;
+
+                if (decimal.length > 0) {
+                    console.log(`[CARD] Lido: ${decimal}`);
+                    processCard(decimal);
+                }
+
+                setTimeout(() => {
+                    if (cardBuffer.length === 0) {
+                        updateStatus('idle', 'Aguardando cartão...', null);
+                    }
+                }, 3000);
+            }
+
+            // ==================== SETTINGS PANEL ====================
+            function openPanel() {
+                if (settingsPanel) settingsPanel.classList.add('active');
+                if (settingsBackdrop) settingsBackdrop.classList.add('active');
+                if (configTrigger) configTrigger.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closePanel() {
+                if (settingsPanel) settingsPanel.classList.remove('active');
+                if (settingsBackdrop) settingsBackdrop.classList.remove('active');
+                if (configTrigger) configTrigger.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+
+            function togglePanel() {
+                if (settingsPanel && settingsPanel.classList.contains('active')) {
+                    closePanel();
+                } else {
+                    openPanel();
+                }
+            }
+
+            if (configTrigger) configTrigger.addEventListener('click', togglePanel);
+            if (panelClose) panelClose.addEventListener('click', closePanel);
+            if (settingsBackdrop) settingsBackdrop.addEventListener('click', closePanel);
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && settingsPanel && settingsPanel.classList.contains('active')) {
+                    if (document.activeElement !== testInput) {
+                        closePanel();
+                    }
+                }
+            });
+
+            // ==================== MANUAL TEST ====================
+            if (testBtn) {
+                testBtn.addEventListener('click', () => {
+                    if (!testInput) return;
+                    const value = testInput.value.trim();
+                    if (!value) {
+                        if (testResult) {
+                            testResult.textContent = 'Digite um código decimal.';
+                            testResult.className = 'test-result error';
+                        }
+                        return;
+                    }
+
+                    const decimal = value.replace(/\D/g, '');
+                    if (!decimal) {
+                        if (testResult) {
+                            testResult.textContent = 'Código inválido. Use apenas números.';
+                            testResult.className = 'test-result error';
+                        }
+                        return;
+                    }
+
+                    const hex = decahex(decimal);
+                    if (!hex) {
+                        if (testResult) {
+                            testResult.textContent = 'Erro na conversão. Número muito grande?';
+                            testResult.className = 'test-result error';
+                        }
+                        return;
+                    }
+
+                    const imageUrl = lookupImage(hex);
+
+                    if (testResult) {
+                        if (imageUrl) {
+                            testResult.innerHTML = `
+                                <strong>Hex:</strong> ${hex}<br>
+                                <strong>Imagem:</strong> ${imageUrl}<br>
+                                <span style="color:var(--success);">✓ Encontrada na base!</span>
+                            `;
+                            testResult.className = 'test-result success';
+                        } else {
+                            testResult.innerHTML = `
+                                <strong>Hex:</strong> ${hex}<br>
+                                <span style="color:var(--danger);">✗ Nenhuma informação correspondente na base.</span>
+                            `;
+                            testResult.className = 'test-result error';
+                        }
+                    }
+
+                    processCard(decimal);
+                });
+            }
+
+            if (testInput) {
+                testInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (testBtn) testBtn.click();
+                    }
+                });
+            }
+
+            // ==================== CLICK OUTSIDE TO CLOSE ====================
+            document.addEventListener('click', (e) => {
+                if (settingsPanel && settingsPanel.classList.contains('active') &&
+                    !settingsPanel.contains(e.target) &&
+                    e.target !== configTrigger &&
+                    !(configTrigger && configTrigger.contains(e.target))) {
+                    closePanel();
+                }
+            });
+
+            // ==================== INIT ====================
+            function init() {
+                document.addEventListener('keydown', handleKeyDown, true);
+                loadDatabase();
+                updateStatus('idle', 'Aguardando cartão...', null);
+                console.log('[APP] 🚀 Leitor de cartão magnético inicializado.');
+                console.log('[APP] Threshold:', KEY_THRESHOLD_MS, 'ms | Pause:', PAUSE_THRESHOLD_MS, 'ms');
+            }
+
+            init();
+        })();
+    </script>
+</body>
+</html>
